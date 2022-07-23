@@ -11,3 +11,6 @@ Hold <kbd>Right-Click</kbd> to move the camera with the mouse. <kbd>Mouse-Scroll
 <kbd>Left-Click</kbd> to lock and automatically move your camera and track the closest player. <br />
 <kbd>F5</kbd> to stop spectating, this must be done before the race loads.
 
+## Install
+**[Latest release](https://github.com/kaskelott/GKFR_SpectatorMod/releases)**
+
