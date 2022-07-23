@@ -13,4 +13,5 @@ Hold <kbd>Right-Click</kbd> to move the camera with the mouse. <kbd>Mouse-Scroll
 
 ## Install
 **[Latest release](https://github.com/kaskelott/GKFR_SpectatorMod/releases)**
+Unzip and drop the folder in the game's root-folder
 
