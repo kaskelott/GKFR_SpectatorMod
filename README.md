@@ -1,5 +1,6 @@
 # GKFR SpectatorMod
 A spectator mod for Garfield Kart: Furious Racing, made by AppreciativeWalrus and kaskelott.
+The mod causes some sync issues when hosting with it so I recommend not hosting with it :)
 
 ## Controls
 <kbd>1</kbd> - <kbd>8</kbd> are used to hook onto players and follow them. <kbd>9</kbd> and <kbd>0</kbd> are used to go back to freecam. <br />
