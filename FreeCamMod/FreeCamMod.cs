@@ -182,20 +182,17 @@ namespace FreeCamMod
             }
             if (___m_componentToSynchronize == GkNetTransformSync.ComponentToSynchronize.RIGIDBODY)
             {
-                ___m_rigidBody.position = position;
+                ___m_rigidBody.position = vector;
                 ___m_rigidBody.rotation = rotation;
                 ___m_rigidBody.velocity = velocity;
                 
             }
             else
             {
-                ___m_transform.position = position;
+                ___m_transform.position = vector;
                 ___m_transform.rotation = rotation;
             }            
             ___m_velocity = velocity;
-
-
-            //FileLog.Log(vector.ToString() + " | " + rotation.ToString() +" | " + velocity.ToString());
 
             return false;
 
@@ -402,6 +399,12 @@ namespace FreeCamMod
     public class FreeCam : MonoBehaviour
     {
         static AccessTools.FieldRef<CameraBase, Transform> camtransform = AccessTools.FieldRefAccess<Transform>(typeof(CameraBase), "m_pTransform");
+
+        void Awake()
+        {
+
+        }
+
         private void Update()
         {
             bool flag = !Plugin.run && !this.running;
@@ -417,8 +420,7 @@ namespace FreeCamMod
                 bool flag2 = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
                 float d = flag2 ? this.fastMovementSpeed : this.movementSpeed;
                 Vector3 vector = base.transform.position;
-                bool flag3 = this.drivers == null;
-                if (flag3)
+                if (this.drivers == null)
                 {
                     this.drivers = new Driver[Singleton<GameManager>.Instance.GameMode.DriversCount];
 
@@ -439,38 +441,26 @@ namespace FreeCamMod
                             //FileLog.Log("LOCAL ID: " + drivur.LocalId.ToString());
                             this.drivers[drivur.Id-1] = drivur;
                         }
-                    }                 
-                   
-                    
+                    }                                                        
                 }
-                bool flag4 = Input.GetKeyDown(KeyCode.Backspace) || Input.GetKeyDown(KeyCode.Delete);
-                if (flag4)
+                /*if (!Input.anyKey)
                 {
-                    foreach (object obj in this.body.transform)
+                    vector = this.updateLocalFollow(vector);
+                    this.checkMouse();
+                    if (following == -1 || drivers[following].LocalHumanId == 0)
                     {
-                        Transform transform = (Transform)obj;
-                        bool flag5 = transform.name.EndsWith("_body(Clone)");
-                        if (flag5)
-                        {
-                            Transform transform2 = transform.Find("KartHD_Rig");
-                            bool flag6 = transform2 != null;
-                            if (flag6)
-                            {
-                                transform2.gameObject.SetActive(false);
-                            }
-                            break;
-                        }
+                        this.body.transform.position = vector;
                     }
-                }
-                bool keyDown = Input.GetKeyDown(KeyCode.Alpha1);
-                if (keyDown)
+                    return;
+                }*/
+                
+                if (Input.GetKeyDown(KeyCode.Alpha1))
                 {
                     this.following = 0;
                 }
                 else
                 {
-                    bool keyDown2 = Input.GetKeyDown(KeyCode.Alpha2);
-                    if (keyDown2)
+                    if (Input.GetKeyDown(KeyCode.Alpha2))
                     {
                         //var mycam = this.driver.Kart.AttachedCamera;
                         //var theircam = drivers[1].Kart.AttachedCamera;
@@ -481,53 +471,45 @@ namespace FreeCamMod
                     }
                     else
                     {
-                        bool keyDown3 = Input.GetKeyDown(KeyCode.Alpha3);
-                        if (keyDown3)
+                        if (Input.GetKeyDown(KeyCode.Alpha3))
                         {
                             this.following = 2;
                         }
                         else
                         {
-                            bool keyDown4 = Input.GetKeyDown(KeyCode.Alpha4);
-                            if (keyDown4)
+                            if (Input.GetKeyDown(KeyCode.Alpha4))
                             {
                                 this.following = 3;
                             }
                             else
                             {
-                                bool keyDown5 = Input.GetKeyDown(KeyCode.Alpha5);
-                                if (keyDown5)
+                                if (Input.GetKeyDown(KeyCode.Alpha5))
                                 {
                                     this.following = 4;
                                 }
                                 else
                                 {
-                                    bool keyDown6 = Input.GetKeyDown(KeyCode.Alpha6);
-                                    if (keyDown6)
+                                    if (Input.GetKeyDown(KeyCode.Alpha6))
                                     {
                                         this.following = 5;
                                     }
                                     else
                                     {
-                                        bool keyDown7 = Input.GetKeyDown(KeyCode.Alpha7);
-                                        if (keyDown7)
+                                        if (Input.GetKeyDown(KeyCode.Alpha7))
                                         {
                                             this.following = 6;
                                         }
                                         else
                                         {
-                                            bool keyDown8 = Input.GetKeyDown(KeyCode.Alpha8);
-                                            if (keyDown8)
+                                            if (Input.GetKeyDown(KeyCode.Alpha8))
                                             {
                                                 this.following = 7;
                                             }
                                             else
                                             {
-                                                bool flag7 = Input.GetKeyDown(KeyCode.Alpha9) || Input.GetKeyDown(KeyCode.Alpha0);
-                                                if (flag7)
+                                                if (Input.GetKeyDown(KeyCode.Alpha9) || Input.GetKeyDown(KeyCode.Alpha0))
                                                 {
                                                     this.following = -1;
-                                                    friKamera = true;
                                                 }
                                             }
                                         }
@@ -536,19 +518,149 @@ namespace FreeCamMod
                             }
                         }
                     }
-                }
+                }             
                 if ((following >= 0 && drivers[following].LocalHumanId == 0) || following < 0) friKamera = true;
                 else friKamera =  false;
-                //if (Input.GetKeyDown(KeyCode.Mouse0)) FileLog.Log(driver.ToString());
+                this.checkMouse();
+                vector = this.updateLocalFollow(vector);
 
 
-                if (Input.GetKeyDown(KeyCode.Mouse0) && !freeCamLockOn)
+                
+                if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))
                 {
-                    Driver bestCandidate = null;
+                    vector += -base.transform.right * d * Time.deltaTime;
+                }
+                if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))
+                {
+                    vector += base.transform.right * d * Time.deltaTime;
+                }
+                if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))
+                {
+                    Vector3 direction = base.transform.forward;
+                    direction = Vector3.ProjectOnPlane(direction, Vector3.up).normalized;
+                    vector += direction * d * Time.deltaTime;
+                }
+                if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))
+                {
+                    Vector3 direction = base.transform.forward;
+                    direction = Vector3.ProjectOnPlane(direction, Vector3.up).normalized;
+                    vector += -direction * d * Time.deltaTime;
+                }
+                if (Input.GetKey(KeyCode.Q))
+                {
+                    vector += base.transform.up * d * Time.deltaTime;
+                }
+                if (Input.GetKey(KeyCode.E))
+                {
+                    vector += -base.transform.up * d * Time.deltaTime;
+                }
+                if (Input.GetKey(KeyCode.R) || Input.GetKey(KeyCode.PageUp) || Input.GetKey(KeyCode.Space))
+                {
+                    vector += Vector3.up * d * Time.deltaTime;
+                }
+                if (Input.GetKey(KeyCode.F) || Input.GetKey(KeyCode.PageDown))
+                {
+                    vector += -Vector3.up * d * Time.deltaTime;
+                }
+                if (this.looking)
+                {
+                    float y = this.body.rotation.eulerAngles.y + Input.GetAxisRaw("Mouse X") * this.freeLookSensitivity;
+                    float x = this.body.rotation.eulerAngles.x - Input.GetAxisRaw("Mouse Y") * this.freeLookSensitivity;
+                    Quaternion rotation = default(Quaternion);
+                    rotation.eulerAngles = new Vector3(x, y, 0f);
+                    this.body.rotation = rotation;
+                }
+                float axis = Input.GetAxis("Mouse ScrollWheel");
+                if (axis != 0f)
+                {
+                    float d2 = flag2 ? this.fastZoomSensitivity : this.zoomSensitivity;
+                    vector += base.transform.forward * axis * d2;
+                }
+                if (Input.GetKeyDown(KeyCode.Mouse1))
+                {
+                    this.StartLooking();
+                }
+                else
+                {
+                    if (Input.GetKeyUp(KeyCode.Mouse1))
+                    {
+                        this.StopLooking();
+                    }
+                }
+                //FileLog.Log(vector.ToString());
+                if (following == -1 || drivers[following].LocalHumanId == 0)
+                {
+                    this.body.transform.position = vector;
+                }
+               
+                
+
+            }
+
+
+        }
+
+        public Vector3 updateLocalFollow(Vector3 vector)
+        {
+            if (this.following > -1 && this.following < this.drivers.Length && GkNetMgr.Instance.IsDisconnectedOrMasterClient && drivers[following].IsAi)
+            {
+                //FileLog.Log("test");
+                vector = this.drivers[this.following].transform.position;
+                var rotat = this.drivers[this.following].transform.rotation;
+                var velocity = this.drivers[this.following].Kart.GetLocalVelocity();
+                this.body.MovePosition(Vector3.Lerp(this.body.position, vector, Time.deltaTime * 3.5f));
+                this.body.rotation = Quaternion.Lerp(this.body.rotation, rotat, Time.deltaTime * 3.5f);
+                this.body.velocity = Vector3.Lerp(this.body.velocity, velocity, Time.deltaTime * 3.5f);                
+            }
+            return vector;
+        }
+
+        public void checkMouse()
+        {
+            if (Input.GetKeyDown(KeyCode.Mouse0) && !freeCamLockOn)
+            {
+                Driver bestCandidate = null;
+                float bestScore = 10000000f;
+                for (int i = 0; i < drivers.Length; i++)
+                {
+                    //FileLog.Log(drivers[i].Id.ToString());
+                    if (drivers[i].LocalHumanId == 0) continue;
+                    Vector3 vec = drivers[i].gameObject.transform.position - driver.gameObject.transform.position;
+                    float magnitud = vec.magnitude;
+                    //FileLog.Log("Driver: " + i.ToString() + " : "  + magnitud.ToString());
+                    vec = vec.normalized;
+                    //FileLog.Log(vec.ToString());
+                    Vector3 camvec = driver.gameObject.transform.forward;
+                    //FileLog.Log(camvec.ToString());
+                    float angle = Vector3.Angle(camvec, vec);
+                    //FileLog.Log("Degrees: " + angle.ToString() + "\n");
+
+
+                    if (angle < bestScore && magnitud < 100f)
+                    {
+                        bestScore = angle;
+                        bestCandidate = drivers[i];
+                    }
+                }
+                if (bestCandidate != null)
+                {
+                    freeCamLockOnTarget = bestCandidate;
+                    freeCamLockOn = true;
+                }
+            }
+            else if (Input.GetKeyDown(KeyCode.Mouse0) && freeCamLockOn)
+            {
+                freeCamLockOn = false;
+                freeCamLockOnTarget = null;
+            }
+            else
+            {
+                if (Input.GetKeyDown(KeyCode.Mouse2) && !followLockOn)
+                {
+                    int bestCandidate = -1;
                     float bestScore = 10000000f;
                     for (int i = 0; i < drivers.Length; i++)
                     {
-                        //FileLog.Log(drivers[i].Id.ToString());
                         if (drivers[i].LocalHumanId == 0) continue;
                         Vector3 vec = drivers[i].gameObject.transform.position - driver.gameObject.transform.position;
                         float magnitud = vec.magnitude;
@@ -564,164 +676,29 @@ namespace FreeCamMod
                         if (angle < bestScore && magnitud < 100f)
                         {
                             bestScore = angle;
-                            bestCandidate = drivers[i];
+                            bestCandidate = i;
                         }
                     }
-                    if (bestCandidate != null)
+                    if (bestCandidate != -1)
                     {
-                        freeCamLockOnTarget = bestCandidate;
-                        freeCamLockOn = true;
+                        this.following = bestCandidate;
+                        followLockOn = true;
+                        friKamera = false;
                     }
                 }
-                else if (Input.GetKeyDown(KeyCode.Mouse0) && freeCamLockOn)
+                else if (Input.GetKeyDown(KeyCode.Mouse2) && followLockOn)
                 {
-                    freeCamLockOn = false;
-                    freeCamLockOnTarget = null;
+                    followLockOn = false;
+                    this.following = -1;
+                    friKamera = true;
                 }
-                else
-                {
-                    if (Input.GetKeyDown(KeyCode.Mouse2) && !followLockOn)
-                    {
-                        int bestCandidate = -1;
-                        float bestScore = 10000000f;
-                        for (int i = 0; i < drivers.Length; i++)
-                        {
-                            if (drivers[i].LocalHumanId == 0) continue;
-                            Vector3 vec = drivers[i].gameObject.transform.position - driver.gameObject.transform.position;
-                            float magnitud = vec.magnitude;
-                            //FileLog.Log("Driver: " + i.ToString() + " : "  + magnitud.ToString());
-                            vec = vec.normalized;
-                            //FileLog.Log(vec.ToString());
-                            Vector3 camvec = driver.gameObject.transform.forward;
-                            //FileLog.Log(camvec.ToString());
-                            float angle = Vector3.Angle(camvec, vec);
-                            //FileLog.Log("Degrees: " + angle.ToString() + "\n");
-
-
-                            if (angle < bestScore && magnitud < 100f)
-                            {
-                                bestScore = angle;
-                                bestCandidate = i;
-                            }
-                        }
-                        if (bestCandidate != -1)
-                        {
-                            this.following = bestCandidate;
-                            followLockOn = true;
-                            friKamera = false;
-                        }
-                    }
-                    else if (Input.GetKeyDown(KeyCode.Mouse2) && followLockOn)
-                    {
-                        followLockOn = false;
-                        this.following = -1;
-                        friKamera = true;
-                    }
-                }
-                if (freeCamLockOn && freeCamLockOnTarget != null)
-                {                   
-                    var rotation = Quaternion.LookRotation(freeCamLockOnTarget.transform.position - driver.transform.position);
-                    driver.transform.rotation = Quaternion.Lerp(driver.transform.rotation, rotation, Time.deltaTime*3f);
-                    //driver.transform.LookAt(freeCamLockOnTarget.transform, freeCamLockOnTarget.transform.forward);
-                }
-
-
-
-
-                if (this.following > -1 && this.following < this.drivers.Length && GkNetMgr.Instance.IsDisconnectedOrMasterClient && drivers[following].IsAi)
-                {
-                    //FileLog.Log("test");
-                    vector = this.drivers[this.following].transform.position;
-                    var rotat = this.drivers[this.following].transform.rotation;
-                    var velocity = this.drivers[this.following].Kart.GetLocalVelocity();
-                    this.body.MovePosition(Vector3.Lerp(this.body.position, vector, Time.deltaTime*3.5f));
-                    this.body.rotation = Quaternion.Lerp(this.body.rotation, rotat, Time.deltaTime * 3.5f);
-                    this.body.velocity = Vector3.Lerp(this.body.velocity, velocity, Time.deltaTime*3.5f);
-                }
-                bool flag9 = Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow);
-                if (flag9)
-                {
-                    vector += -base.transform.right * d * Time.deltaTime;
-                }
-                bool flag10 = Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow);
-                if (flag10)
-                {
-                    vector += base.transform.right * d * Time.deltaTime;
-                }
-                bool flag11 = Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow);
-                if (flag11)
-                {
-                    Vector3 direction = base.transform.forward;
-                    direction = Vector3.ProjectOnPlane(direction, Vector3.up).normalized;
-                    vector += direction * d * Time.deltaTime;
-                }
-                bool flag12 = Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow);
-                if (flag12)
-                {
-                    Vector3 direction = base.transform.forward;
-                    direction = Vector3.ProjectOnPlane(direction, Vector3.up).normalized;
-                    vector += -direction * d * Time.deltaTime;
-                }
-                bool key = Input.GetKey(KeyCode.Q);
-                if (key)
-                {
-                    vector += base.transform.up * d * Time.deltaTime;
-                }
-                bool key2 = Input.GetKey(KeyCode.E);
-                if (key2)
-                {
-                    vector += -base.transform.up * d * Time.deltaTime;
-                }
-                bool flag13 = Input.GetKey(KeyCode.R) || Input.GetKey(KeyCode.PageUp) || Input.GetKey(KeyCode.Space);
-                if (flag13)
-                {
-                    vector += Vector3.up * d * Time.deltaTime;
-                }
-                bool flag14 = Input.GetKey(KeyCode.F) || Input.GetKey(KeyCode.PageDown);
-                if (flag14)
-                {
-                    vector += -Vector3.up * d * Time.deltaTime;
-                }
-                bool flag15 = this.looking;
-                if (flag15)
-                {
-                    float y = this.body.rotation.eulerAngles.y + Input.GetAxisRaw("Mouse X") * this.freeLookSensitivity;
-                    float x = this.body.rotation.eulerAngles.x - Input.GetAxisRaw("Mouse Y") * this.freeLookSensitivity;
-                    Quaternion rotation = default(Quaternion);
-                    rotation.eulerAngles = new Vector3(x, y, 0f);
-                    this.body.rotation = rotation;
-                }
-                float axis = Input.GetAxis("Mouse ScrollWheel");
-                bool flag16 = axis != 0f;
-                if (flag16)
-                {
-                    float d2 = flag2 ? this.fastZoomSensitivity : this.zoomSensitivity;
-                    vector += base.transform.forward * axis * d2;
-                }
-                bool keyDown9 = Input.GetKeyDown(KeyCode.Mouse1);
-                if (keyDown9)
-                {
-                    this.StartLooking();
-                }
-                else
-                {
-                    bool keyUp = Input.GetKeyUp(KeyCode.Mouse1);
-                    if (keyUp)
-                    {
-                        this.StopLooking();
-                    }
-                }
-
-                if (following < 0 || drivers[following].LocalHumanId == 0)
-                {
-                    this.body.MovePosition(vector);
-                }
-               
-                
-
             }
-
-
+            if (freeCamLockOn && freeCamLockOnTarget != null)
+            {
+                var rotation = Quaternion.LookRotation(freeCamLockOnTarget.transform.position - driver.transform.position);
+                driver.transform.rotation = Quaternion.Lerp(driver.transform.rotation, rotation, Time.deltaTime * 3f);
+                //driver.transform.LookAt(freeCamLockOnTarget.transform, freeCamLockOnTarget.transform.forward);
+            }
         }
 
         private void OnDisable()
